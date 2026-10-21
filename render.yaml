@@ -1,0 +1,16 @@
+# Render Blueprint: one web service that runs the Express API and serves the built React app
+services:
+  - type: web
+    name: college-enquiry-chatbot
+    runtime: node
+    plan: free
+    buildCommand: cd frontend && npm ci --include=dev && npm run build && cd ../backend && npm ci --omit=dev
+    startCommand: node backend/server.js
+    healthCheckPath: /api/college
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGO_URI
+        sync: false # Paste your MongoDB Atlas connection string in the Render dashboard

@@ -17,21 +17,24 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:3000',
   process.env.CLIENT_URL,
-  process.env.RENDER_EXTERNAL_URL, // Set automatically by Render
 ].filter(Boolean);
 
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, Postman)
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
-      }
-      return callback(new Error('Blocked by CORS policy'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+  cors((req, callback) => {
+    const origin = req.header('Origin');
+    // Same-origin requests (frontend and API served from one domain, e.g. on Vercel)
+    const host = req.header('X-Forwarded-Host') || req.header('Host');
+    const isSameOrigin = origin && origin.replace(/^https?:\/\//, '') === host;
+    // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+    const allowed =
+      !origin || isSameOrigin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production';
+
+    callback(allowed ? null : new Error('Blocked by CORS policy'), {
+      origin: allowed,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
   })
 );
 
@@ -91,17 +94,20 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
-// Connect to MongoDB and start Express server
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 Base URL: http://localhost:${PORT}`);
+// Connect to MongoDB and start Express server when run directly
+// (on Vercel, api/index.js imports the app and connects per serverless instance)
+if (require.main === module) {
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌐 Base URL: http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to start server due to DB connection error:', err);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error('Failed to start server due to DB connection error:', err);
-    process.exit(1);
-  });
+}
 
 module.exports = app;

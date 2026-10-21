@@ -25,6 +25,10 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.warn(`⚠️ Could not connect to local/remote MongoDB at "${primaryUri}": ${error.message}`);
+    // The in-memory fallback downloads a ~500MB MongoDB binary, so it is for local use only
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      throw error;
+    }
     console.log('🔄 Attempting fallback to in-memory MongoDB engine for zero-setup academic evaluation...');
 
     try {

@@ -214,6 +214,19 @@ cd C:\Users\vaishnavi\.gemini\antigravity\scratch\college-enquiry-chatbot
 
 ---
 
+## ☁️ Deploying to Vercel
+
+The repository deploys to Vercel as a single project (configured in `vercel.json`):
+the React build is served as static files and the Express API runs as a serverless function (`api/index.js`) on the same domain.
+
+1. Create a free **MongoDB Atlas** cluster, allow network access from `0.0.0.0/0`, and copy the connection string (include the database name, e.g. `.../college_chatbot?retryWrites=true&w=majority`).
+2. On **Vercel**, import this GitHub repository (leave Framework Preset as **Other** and Root Directory as `./`).
+3. Add the environment variable `MONGO_URI` with your Atlas connection string, then deploy.
+
+The empty Atlas database is seeded automatically on the first API request.
+
+---
+
 ## 📡 REST API Reference
 
 | Method | Endpoint | Description | Sample Request / Response |
